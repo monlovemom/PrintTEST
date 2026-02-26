@@ -16,14 +16,14 @@
             width: 210mm; 
             min-height: 297mm; 
             background-color: #ffffff !important; 
-            padding: 8mm 12mm; 
+            padding: 10mm 15mm; 
             box-sizing: border-box; 
             display: flex;
             flex-direction: column;
         }
         .print-format {
             font-weight: bold;
-            line-height: 1.35; 
+            line-height: 1.4; 
             color: black;
         }
         .text-red-print { color: #FF0000; }
@@ -31,7 +31,7 @@
 </head>
 <body class="bg-gray-50 pb-10">
     <div class="max-w-md mx-auto mt-6 bg-white p-6 rounded-xl shadow-md">
-        <h2 class="text-2xl font-bold mb-6 text-center text-blue-600">สร้างใบปะหน้า PDF (Font ยักษ์พิเศษ)</h2>
+        <h2 class="text-2xl font-bold mb-6 text-center text-blue-600">สร้างใบปะหน้า PDF (ใหญ่พิเศษ)</h2>
         
         <div id="main-content">
             <div class="mb-4 p-3 bg-gray-100 rounded-lg border border-gray-300">
@@ -43,19 +43,19 @@
             <div id="input-section">
                 <div class="mb-4">
                     <label class="block text-gray-700 font-bold mb-2">ชื่อผู้รับ</label>
-                    <input type="text" id="receiverName" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <input type="text" id="receiverName" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="ระบุชื่อ">
                 </div>
                 <div class="mb-4">
                     <label class="block text-gray-700 font-bold mb-2">ที่อยู่ผู้รับ</label>
-                    <textarea id="receiverAddress" rows="3" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                    <textarea id="receiverAddress" rows="3" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="ที่อยู่"></textarea>
                 </div>
                 <div class="mb-4">
                     <label class="block text-gray-700 font-bold mb-2">เบอร์โทรผู้รับ</label>
-                    <input type="tel" id="receiverPhone" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <input type="tel" id="receiverPhone" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="เบอร์โทร">
                 </div>
                 <div class="mb-6">
                     <label class="block text-gray-700 font-bold mb-2">รายการสินค้า</label>
-                    <textarea id="items" rows="2" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                    <textarea id="items" rows="2" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="รายการสินค้า"></textarea>
                 </div>
 
                 <button id="btn-add" onclick="saveRecipient()" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 rounded-lg text-lg shadow-md mb-2">
@@ -68,15 +68,15 @@
             <div class="mb-6">
                 <h3 class="font-bold text-gray-700 mb-2">📋 รายการลูกค้า (<span id="list-count">0</span>)</h3>
                 <ul id="recipientList" class="bg-gray-50 border border-gray-200 rounded-lg p-2 min-h-[60px] max-h-[200px] overflow-y-auto">
-                    <li class="text-center text-gray-400 py-3 text-sm" id="empty-msg">ไม่มีข้อมูล</li>
+                    <li class="text-center text-gray-400 py-3 text-sm" id="empty-msg">ยังไม่มีข้อมูล</li>
                 </ul>
             </div>
-            <button id="btn-reset" onclick="resetForm()" class="w-full bg-red-400 text-white font-bold py-2 rounded-lg mb-6" style="display: none;">ลบทั้งหมด</button>
+            <button id="btn-reset" onclick="resetForm()" class="w-full bg-red-400 text-white font-bold py-2 rounded-lg mb-6" style="display: none;">ลบข้อมูลทั้งหมด</button>
         </div>
 
         <button id="btn-prepare" onclick="preparePDF()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-lg text-xl shadow-lg opacity-50 cursor-not-allowed" disabled>⚙️ 1. เตรียมไฟล์ PDF</button>
-        <button id="btn-share" onclick="sharePDF()" class="w-full bg-green-500 text-white font-bold py-4 rounded-lg text-xl shadow-lg mb-2" style="display: none;">📤 2. แชร์ PDF</button>
-        <button id="btn-back-edit" onclick="goBackToEdit()" class="w-full bg-yellow-500 text-white font-bold py-3 rounded-lg text-lg shadow-md" style="display: none;">🔙 กลับไปแก้ไข</button>
+        <button id="btn-share" onclick="sharePDF()" class="w-full bg-green-500 text-white font-bold py-4 rounded-lg text-xl shadow-lg mb-2" style="display: none;">📤 2. แชร์เข้า LINE / บันทึก</button>
+        <button id="btn-back-edit" onclick="goBackToEdit()" class="w-full bg-yellow-500 text-white font-bold py-3 rounded-lg text-lg shadow-md" style="display: none;">🔙 กลับไปแก้ไขข้อมูล</button>
     </div>
 
     <div id="hidden-wrapper">
@@ -143,7 +143,7 @@
         function updateListUI() {
             const list = document.getElementById('recipientList');
             document.getElementById('list-count').innerText = recipients.length;
-            list.innerHTML = recipients.length ? '' : '<li class="text-center text-gray-400 py-3 text-sm">ไม่มีข้อมูล</li>';
+            list.innerHTML = recipients.length ? '' : '<li class="text-center text-gray-400 py-3 text-sm">ยังไม่มีข้อมูล</li>';
             recipients.forEach((rec, i) => {
                 list.innerHTML += `<li class="flex justify-between items-center bg-white border rounded p-2 mb-2 text-sm">
                     <div class="truncate font-semibold">${i+1}. ${rec.name}</div>
@@ -166,13 +166,12 @@
                 for (let i = 0; i < recipients.length; i++) {
                     const rec = recipients[i];
                     
-                    // 📌 ระบบคำนวณ Font ขนาดใหญ่พิเศษแบบ Dynamic
+                    // 📌 คำนวณขนาด Font ให้ใหญ่สะใจ
                     const totalChars = rec.name.length + rec.address.length + rec.items.length;
-                    let fontSize = '38pt';
-                    if (totalChars < 60) fontSize = '55pt'; // ใหญ่ยักษ์ถ้าข้อมูลน้อย
-                    else if (totalChars < 120) fontSize = '48pt';
-                    else if (totalChars < 200) fontSize = '42pt';
-                    else if (totalChars > 350) fontSize = '30pt'; // เล็กลงถ้าข้อมูลเยอะมาก
+                    let fontSize = '40pt';
+                    if (totalChars < 60) fontSize = '55pt'; 
+                    else if (totalChars < 130) fontSize = '48pt';
+                    else if (totalChars > 300) fontSize = '32pt';
 
                     const container = document.getElementById('pdf-container');
                     container.style.fontSize = fontSize;
@@ -184,14 +183,16 @@
 
                     await new Promise(r => setTimeout(r, 150));
                     const canvas = await html2canvas(container, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
-                    const imgData = canvas.toDataURL('image/jpeg', 0.75);
+                    const imgData = canvas.toDataURL('image/jpeg', 0.85); // ปรับคุณภาพภาพให้ชัดขึ้น
                     if (i > 0) pdf.addPage();
                     pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, (canvas.height * pdfWidth) / canvas.width);
                 }
 
                 const d = new Date();
                 const dateStr = `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()+543}`;
-                readyFile = new File([pdf.output('blob')], `ใบปะหน้า_รวม_${recipients.length}คน_${dateStr}.pdf`, { type: 'application/pdf' });
+                
+                // 📌 จุดสำคัญ: ระบุ Type ให้ชัดเจนเพื่อให้ LINE ยอมรับไฟล์
+                readyFile = new File([pdf.output('blob')], `ใบปะหน้า_${recipients.length}คน_${dateStr}.pdf`, { type: 'application/pdf' });
                 
                 document.getElementById('btn-prepare').style.display = 'none';
                 document.getElementById('main-content').style.display = 'none';
@@ -211,8 +212,20 @@
         }
 
         async function sharePDF() {
-            if (navigator.canShare && navigator.canShare({ files: [readyFile] })) await navigator.share({ files: [readyFile] });
-            else { const url = URL.createObjectURL(readyFile); const a = document.createElement('a'); a.href = url; a.download = readyFile.name; a.click(); }
+            if (!readyFile) return;
+            // 📌 จุดสำคัญ: ใส่ Title ใน navigator.share เพื่อให้แอป LINE ยอมเปิดไฟล์
+            if (navigator.canShare && navigator.canShare({ files: [readyFile] })) {
+                await navigator.share({ 
+                    files: [readyFile], 
+                    title: 'ใบปะหน้าพัสดุ PDF' 
+                });
+            } else {
+                const url = URL.createObjectURL(readyFile);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = readyFile.name;
+                a.click();
+            }
         }
 
         function resetForm() { if(confirm("ลบข้อมูลทั้งหมด?")) { localStorage.removeItem('savedRecipients'); recipients = []; cancelEdit(); updateListUI(); document.getElementById('btn-reset').style.display = 'none'; } }
