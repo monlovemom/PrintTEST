@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>พิมพ์ใบปะหน้าพัสดุ</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    
+    <style>
+        body { font-family: 'Sarabun', sans-serif;}
+        #hidden-wrapper { position: absolute; top: -9999px; left: -9999px; }
+        #pdf-container {
+            width: 210mm; 
+            min-height: 297mm; 
+            background-color: #ffffff !important; 
+            padding: 8mm 12mm; 
+            box-sizing: border-box; 
+            display: flex;
+            flex-direction: column;
+        }
+        .print-format {
+            font-weight: bold;
+            line-height: 1.35; 
+            color: black;
+        }
+        .text-red-print { color: #FF0000; }
+    </style>
+</head>
+<body class="bg-gray-50 pb-10">
+    <div class="max-w-md mx-auto mt-6 bg-white p-6 rounded-xl shadow-md">
+        <h2 class="text-2xl font-bold mb-6 text-center text-blue-600">สร้างใบปะหน้า PDF (Font ยักษ์พิเศษ)</h2>
+        
+        <div id="main-content">
+            <div class="mb-4 p-3 bg-gray-100 rounded-lg border border-gray-300">
+                <p class="text-sm text-gray-500">ผู้ส่ง (ล็อคข้อมูล)</p>
+                <p class="font-bold text-lg">คุณปู</p>
+                <p class="font-bold text-lg">โทร 096-889-6299</p>
+            </div>
+
+            <div id="input-section">
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-bold mb-2">ชื่อผู้รับ</label>
+                    <input type="text" id="receiverName" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-bold mb-2">ที่อยู่ผู้รับ</label>
+                    <textarea id="receiverAddress" rows="3" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 font-bold mb-2">เบอร์โทรผู้รับ</label>
+                    <input type="tel" id="receiverPhone" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 font-bold mb-2">รายการสินค้า</label>
+                    <textarea id="items" rows="2" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+                </div>
+
+                <button id="btn-add" onclick="saveRecipient()" class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-3 rounded-lg text-lg shadow-md mb-2">
+                    ➕ เพิ่มลงรายการ
+                </button>
+                <button id="btn-cancel-edit" onclick="cancelEdit()" class="w-full bg-gray-400 text-white font-bold py-2 rounded-lg mb-6" style="display: none;">❌ ยกเลิกแก้ไข</button>
+            </div>
+
+            <hr class="mb-6 border-gray-300">
+            <div class="mb-6">
+                <h3 class="font-bold text-gray-700 mb-2">📋 รายการลูกค้า (<span id="list-count">0</span>)</h3>
+                <ul id="recipientList" class="bg-gray-50 border border-gray-200 rounded-lg p-2 min-h-[60px] max-h-[200px] overflow-y-auto">
+                    <li class="text-center text-gray-400 py-3 text-sm" id="empty-msg">ไม่มีข้อมูล</li>
+                </ul>
+            </div>
+            <button id="btn-reset" onclick="resetForm()" class="w-full bg-red-400 text-white font-bold py-2 rounded-lg mb-6" style="display: none;">ลบทั้งหมด</button>
+        </div>
+
+        <button id="btn-prepare" onclick="preparePDF()" class="w-full bg-blue-600 text-white font-bold py-4 rounded-lg text-xl shadow-lg opacity-50 cursor-not-allowed" disabled>⚙️ 1. เตรียมไฟล์ PDF</button>
+        <button id="btn-share" onclick="sharePDF()" class="w-full bg-green-500 text-white font-bold py-4 rounded-lg text-xl shadow-lg mb-2" style="display: none;">📤 2. แชร์ PDF</button>
+        <button id="btn-back-edit" onclick="goBackToEdit()" class="w-full bg-yellow-500 text-white font-bold py-3 rounded-lg text-lg shadow-md" style="display: none;">🔙 กลับไปแก้ไข</button>
+    </div>
+
+    <div id="hidden-wrapper">
+        <div id="pdf-container" class="print-format">
+            <div id="sender-area" style="margin-bottom: 5mm;">
+                ผู้ส่ง คุณปู<br>โทร 096-889-6299
+            </div>
+            <div id="receiver-area" style="margin-bottom: 3mm;">
+                ผู้รับ <span id="outName"></span><br>
+                <span id="outAddress"></span><br>
+                โทร <span id="outPhone"></span>
+            </div>
+            <div id="items-area" class="text-red-print">
+                <span id="outItems"></span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let recipients = JSON.parse(localStorage.getItem('savedRecipients')) || [];
+        let readyFile = null;
+        let editingIndex = -1;
+
+        window.onload = () => { updateListUI(); if(recipients.length > 0) document.getElementById('btn-reset').style.display = 'block'; };
+
+        function saveRecipient() {
+            const data = {
+                name: document.getElementById('receiverName').value.trim() || '-',
+                address: document.getElementById('receiverAddress').value.trim() || '-',
+                phone: document.getElementById('receiverPhone').value.trim() || '-',
+                items: document.getElementById('items').value.trim() || ''
+            };
+            if (editingIndex > -1) recipients[editingIndex] = data; else recipients.push(data);
+            cancelEdit(); localStorage.setItem('savedRecipients', JSON.stringify(recipients)); goBackToEdit(); updateListUI();
+            document.getElementById('btn-reset').style.display = 'block';
+        }
+
+        function editRecipient(index) {
+            goBackToEdit(); const rec = recipients[index];
+            document.getElementById('receiverName').value = rec.name;
+            document.getElementById('receiverAddress').value = rec.address;
+            document.getElementById('receiverPhone').value = rec.phone;
+            document.getElementById('items').value = rec.items;
+            editingIndex = index;
+            document.getElementById('btn-add').innerText = '💾 บันทึกแก้ไข';
+            document.getElementById('btn-cancel-edit').style.display = 'block';
+            window.scrollTo(0,0);
+        }
+
+        function cancelEdit() {
+            editingIndex = -1;
+            document.getElementById('receiverName').value = '';
+            document.getElementById('receiverAddress').value = '';
+            document.getElementById('receiverPhone').value = '';
+            document.getElementById('items').value = '';
+            document.getElementById('btn-add').innerText = '➕ เพิ่มลงรายการ';
+            document.getElementById('btn-cancel-edit').style.display = 'none';
+        }
+
+        function removeRecipient(index) {
+            if(confirm("ลบรายการนี้?")) { recipients.splice(index,1); localStorage.setItem('savedRecipients', JSON.stringify(recipients)); goBackToEdit(); updateListUI(); }
+        }
+
+        function updateListUI() {
+            const list = document.getElementById('recipientList');
+            document.getElementById('list-count').innerText = recipients.length;
+            list.innerHTML = recipients.length ? '' : '<li class="text-center text-gray-400 py-3 text-sm">ไม่มีข้อมูล</li>';
+            recipients.forEach((rec, i) => {
+                list.innerHTML += `<li class="flex justify-between items-center bg-white border rounded p-2 mb-2 text-sm">
+                    <div class="truncate font-semibold">${i+1}. ${rec.name}</div>
+                    <div><button onclick="editRecipient(${i})" class="text-blue-500 px-2 border-r">แก้</button>
+                    <button onclick="removeRecipient(${i})" class="text-red-500 px-2">ลบ</button></div></li>`;
+            });
+            document.getElementById('btn-prepare').disabled = !recipients.length;
+            document.getElementById('btn-prepare').classList.toggle('opacity-50', !recipients.length);
+        }
+
+        async function preparePDF() {
+            const btn = document.getElementById('btn-prepare');
+            btn.innerHTML = '⏳ กำลังประมวลผล...'; btn.disabled = true;
+            try {
+                await document.fonts.ready;
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+
+                for (let i = 0; i < recipients.length; i++) {
+                    const rec = recipients[i];
+                    
+                    // 📌 ระบบคำนวณ Font ขนาดใหญ่พิเศษแบบ Dynamic
+                    const totalChars = rec.name.length + rec.address.length + rec.items.length;
+                    let fontSize = '38pt';
+                    if (totalChars < 60) fontSize = '55pt'; // ใหญ่ยักษ์ถ้าข้อมูลน้อย
+                    else if (totalChars < 120) fontSize = '48pt';
+                    else if (totalChars < 200) fontSize = '42pt';
+                    else if (totalChars > 350) fontSize = '30pt'; // เล็กลงถ้าข้อมูลเยอะมาก
+
+                    const container = document.getElementById('pdf-container');
+                    container.style.fontSize = fontSize;
+
+                    document.getElementById('outName').innerText = rec.name;
+                    document.getElementById('outAddress').innerHTML = rec.address.replace(/\n/g, '<br>');
+                    document.getElementById('outPhone').innerText = rec.phone;
+                    document.getElementById('outItems').innerHTML = rec.items.replace(/\n/g, '<br>');
+
+                    await new Promise(r => setTimeout(r, 150));
+                    const canvas = await html2canvas(container, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
+                    const imgData = canvas.toDataURL('image/jpeg', 0.75);
+                    if (i > 0) pdf.addPage();
+                    pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, (canvas.height * pdfWidth) / canvas.width);
+                }
+
+                const d = new Date();
+                const dateStr = `${String(d.getDate()).padStart(2,'0')}-${String(d.getMonth()+1).padStart(2,'0')}-${d.getFullYear()+543}`;
+                readyFile = new File([pdf.output('blob')], `ใบปะหน้า_รวม_${recipients.length}คน_${dateStr}.pdf`, { type: 'application/pdf' });
+                
+                document.getElementById('btn-prepare').style.display = 'none';
+                document.getElementById('main-content').style.display = 'none';
+                document.getElementById('btn-share').style.display = 'block';
+                document.getElementById('btn-back-edit').style.display = 'block';
+            } catch (e) { alert(e.message); btn.disabled = false; }
+        }
+
+        function goBackToEdit() {
+            readyFile = null;
+            document.getElementById('btn-prepare').innerHTML = '⚙️ 1. เตรียมไฟล์ PDF';
+            document.getElementById('btn-prepare').style.display = 'block';
+            document.getElementById('btn-share').style.display = 'none';
+            document.getElementById('btn-back-edit').style.display = 'none';
+            document.getElementById('main-content').style.display = 'block';
+            updateListUI();
+        }
+
+        async function sharePDF() {
+            if (navigator.canShare && navigator.canShare({ files: [readyFile] })) await navigator.share({ files: [readyFile] });
+            else { const url = URL.createObjectURL(readyFile); const a = document.createElement('a'); a.href = url; a.download = readyFile.name; a.click(); }
+        }
+
+        function resetForm() { if(confirm("ลบข้อมูลทั้งหมด?")) { localStorage.removeItem('savedRecipients'); recipients = []; cancelEdit(); updateListUI(); document.getElementById('btn-reset').style.display = 'none'; } }
+    </script>
+</body>
+</html>
